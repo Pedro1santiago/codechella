@@ -133,10 +133,50 @@ const Index = () => {
           </div>
 
           <div className="text-center mt-12">
-            <Button variant="outline" size="lg">
-              Ver Todos os Eventos
-              <ArrowRight className="w-5 h-5" />
+            <Button variant="outline" size="lg" asChild>
+              <a href="/eventos">
+                Ver Todos os Eventos
+                <ArrowRight className="w-5 h-5" />
+              </a>
             </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Categories Section */}
+      <section id="categorias" className="py-24 bg-gradient-to-b from-background to-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center max-w-2xl mx-auto mb-16 space-y-4">
+            <h2 className="font-display text-4xl md:text-5xl font-bold">
+              Explore por <span className="text-gradient">Categoria</span>
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Encontre o tipo de evento perfeito para você
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            {[
+              { id: "SHOW", label: "Shows", emoji: "🎸" },
+              { id: "CONCERTO", label: "Concertos", emoji: "🎼" },
+              { id: "TEATRO", label: "Teatro", emoji: "🎭" },
+              { id: "PALESTRA", label: "Palestras", emoji: "🎤" },
+              { id: "WORKSHOP", label: "Workshops", emoji: "🎨" }
+            ].map((category, index) => (
+              <a
+                key={category.id}
+                href={`/eventos?categoria=${category.id}`}
+                className="group relative bg-card border-2 border-border hover:border-primary rounded-2xl p-8 text-center transition-all duration-300 hover:shadow-glow hover:scale-105 animate-fade-in"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">
+                  {category.emoji}
+                </div>
+                <h3 className="font-display text-lg font-bold text-foreground group-hover:text-primary transition-colors">
+                  {category.label}
+                </h3>
+              </a>
+            ))}
           </div>
         </div>
       </section>

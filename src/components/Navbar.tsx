@@ -16,14 +16,14 @@ export const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center gap-8">
-            <a href="#eventos" className="text-foreground hover:text-primary transition-colors font-medium">
+            <a href="/#eventos" className="text-foreground hover:text-primary transition-colors font-medium">
               Eventos
             </a>
-            <a href="#categorias" className="text-foreground hover:text-primary transition-colors font-medium">
+            <a href="/#categorias" className="text-foreground hover:text-primary transition-colors font-medium">
               Categorias
             </a>
-            <a href="#sobre" className="text-foreground hover:text-primary transition-colors font-medium">
-              Sobre
+            <a href="/eventos" className="text-foreground hover:text-primary transition-colors font-medium">
+              Ver Todos
             </a>
           </div>
 
