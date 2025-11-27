@@ -31,9 +31,11 @@ export const Navbar = () => {
             <Button variant="ghost" size="icon" className="hidden md:flex">
               <Search className="w-5 h-5" />
             </Button>
-            <Button variant="outline" className="hidden md:flex">
-              <User className="w-4 h-4 mr-2" />
-              Entrar
+            <Button variant="outline" className="hidden md:flex" asChild>
+              <a href="/login">
+                <User className="w-4 h-4 mr-2" />
+                Entrar
+              </a>
             </Button>
             <Button variant="hero" size="sm">
               Criar Evento

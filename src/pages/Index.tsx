@@ -16,7 +16,7 @@ const Index = () => {
       location: "São Paulo, SP",
       price: "R$ 180",
       image: eventElectronic,
-      category: "Eletrônica"
+      category: "SHOW"
     },
     {
       title: "Rock in Rio Experience",
@@ -24,7 +24,7 @@ const Index = () => {
       location: "Rio de Janeiro, RJ",
       price: "R$ 250",
       image: eventRock,
-      category: "Rock"
+      category: "CONCERTO"
     },
     {
       title: "Jazz & Blues Night",
@@ -32,7 +32,7 @@ const Index = () => {
       location: "Belo Horizonte, MG",
       price: "R$ 120",
       image: eventJazz,
-      category: "Jazz"
+      category: "SHOW"
     },
     {
       title: "Urban Beats Festival",
@@ -40,7 +40,7 @@ const Index = () => {
       location: "Brasília, DF",
       price: "R$ 150",
       image: eventHipHop,
-      category: "Hip Hop"
+      category: "SHOW"
     }
   ];
 
