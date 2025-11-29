@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Music } from "lucide-react";
-import { cadastrarUsuario, loginUsuario } from "../codechellaApi";
+import { cadastrarUsuario, loginUsuario } from "../api/codechellaApi"; // <--- corrigido
 
 const Login = () => {
   const navigate = useNavigate();
@@ -178,3 +178,4 @@ const Login = () => {
 };
 
 export default Login;
+
