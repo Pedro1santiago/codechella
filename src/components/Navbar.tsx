@@ -81,19 +81,32 @@ export const Navbar = () => {
                   <LogOut className="w-4 h-4 mr-2" />
                   Sair
                 </Button>
+
+                <Button variant="hero" size="sm" onClick={handleCreateEvent}>
+                  Criar Evento
+                </Button>
               </>
             ) : (
-              <Button variant="outline" size="sm" className="hidden md:flex" asChild>
-                <a href="/login">
-                  <User className="w-4 h-4 mr-2" />
-                  Entrar
-                </a>
-              </Button>
-            )}
+              <>
+                <Button variant="outline" size="sm" className="hidden md:flex" asChild>
+                  <a href="/login">
+                    <User className="w-4 h-4 mr-2" />
+                    Entrar
+                  </a>
+                </Button>
 
-            <Button variant="hero" size="sm" onClick={handleCreateEvent}>
-              Criar Evento
-            </Button>
+                <Button variant="outline" size="sm" className="md:hidden" asChild>
+                  <a href="/login">
+                    <User className="w-4 h-4 mr-2" />
+                    Entrar
+                  </a>
+                </Button>
+
+                <Button variant="hero" size="sm" className="hidden md:flex" onClick={handleCreateEvent}>
+                  Criar Evento
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
