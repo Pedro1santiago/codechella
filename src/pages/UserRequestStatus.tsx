@@ -16,7 +16,7 @@ export default function UserRequestStatus() {
 
   useEffect(() => {
     if (!user?.token) {
-      navigate("/login");
+      navigate("/login", { replace: true });
       return;
     }
 
@@ -121,6 +121,11 @@ export default function UserRequestStatus() {
     }
   };
 
+  // Não renderizar nada se não estiver logado
+  if (!user?.token) {
+    return null;
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -188,7 +193,13 @@ export default function UserRequestStatus() {
                 )}
                 {config.showAction && !status && (
                   <Button 
-                    onClick={() => navigate("/solicitar-admin")}
+                    onClick={() => {
+                      if (!user?.token) {
+                        navigate("/login");
+                      } else {
+                        navigate("/solicitar-admin");
+                      }
+                    }}
                     className="flex-1"
                     size="lg"
                   >

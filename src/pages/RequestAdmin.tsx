@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,10 +12,21 @@ export default function RequestAdmin() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (!user?.token) {
+      navigate("/login", { replace: true });
+    }
+  }, [user, navigate]);
+
   const [motivo, setMotivo] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [msgType, setMsgType] = useState<"success" | "error" | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Não renderizar nada se não estiver logado
+  if (!user?.token) {
+    return null;
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
