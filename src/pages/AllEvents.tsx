@@ -23,9 +23,17 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-// Mapeamento de imagens por categoria
+// Mapeamento de imagens por categoria com múltiplas opções para shows
+const showImages = [
+  "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80",
+  "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&q=80",
+  "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800&q=80",
+  "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&q=80",
+  "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&q=80"
+];
+
 const categoriasImagens: Record<string, string> = {
-  SHOW: "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80",
+  SHOW: showImages[0],
   CONCERTO: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=800&q=80",
   TEATRO: "https://images.unsplash.com/photo-1503095396549-807759245b35?w=800&q=80",
   PALESTRA: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&q=80",
@@ -46,6 +54,12 @@ function getImagemEvento(event: any): string {
   
   // 3. Usar imagem padrão da categoria
   const categoria = (event.categoria || event.tipo || "").toUpperCase();
+  
+  // Se for SHOW, usar uma imagem variada baseada no ID
+  if (categoria === "SHOW" && event.id) {
+    return showImages[event.id % showImages.length];
+  }
+  
   return categoriasImagens[categoria] || eventFallback;
 }
 

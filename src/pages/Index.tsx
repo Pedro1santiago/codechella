@@ -25,9 +25,17 @@ import { getCustomImage } from "@/lib/imageStorage";
 import AdminPromotionModal from "@/components/AdminPromotionModal";
 import { useAdminPromotionCheck } from "@/hooks/useAdminPromotionCheck";
 
-// Mapeamento de imagens por categoria
+// Mapeamento de imagens por categoria com múltiplas opções para shows
+const showImages = [
+  "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80",
+  "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&q=80",
+  "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800&q=80",
+  "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&q=80",
+  "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&q=80"
+];
+
 const categoriasImagens: Record<string, string> = {
-  SHOW: "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80",
+  SHOW: showImages[0],
   CONCERTO: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=800&q=80",
   TEATRO: "https://images.unsplash.com/photo-1503095396549-807759245b35?w=800&q=80",
   PALESTRA: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&q=80",
@@ -48,6 +56,12 @@ function getImagemEvento(event: any): string {
   
   // 3. Usar imagem padrão da categoria
   const categoria = (event.categoria || event.tipo || "").toUpperCase();
+  
+  // Se for SHOW, usar uma imagem variada baseada no ID
+  if (categoria === "SHOW" && event.id) {
+    return showImages[event.id % showImages.length];
+  }
+  
   return categoriasImagens[categoria] || eventFallback;
 }
 
@@ -57,6 +71,8 @@ const Index = () => {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<any | null>(null);
   const [showLoginAlert, setShowLoginAlert] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const eventsPerPage = 12;
   const showPromotionModal = useAdminPromotionCheck();
 
   // ================== CARREGA EVENTOS DO BACK (COM TOKEN SE DISPONÍVEL) ===================
@@ -85,6 +101,12 @@ const Index = () => {
     setSelected(event);
     setOpen(true);
   }
+
+  // Calcular eventos da página atual
+  const indexOfLastEvent = currentPage * eventsPerPage;
+  const indexOfFirstEvent = indexOfLastEvent - eventsPerPage;
+  const currentEvents = eventos.slice(indexOfFirstEvent, indexOfLastEvent);
+  const totalPages = Math.ceil(eventos.length / eventsPerPage);
 
   return (
     <div className="min-h-screen bg-background">
@@ -174,7 +196,7 @@ const Index = () => {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {eventos.map((event, index) => (
+            {currentEvents.map((event, index) => (
               <div 
                 key={event.id}
                 className="animate-slide-up"
@@ -196,6 +218,43 @@ const Index = () => {
               </div>
             ))}
           </div>
+
+          {/* Paginação */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-12">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+              >
+                <ArrowRight className="w-5 h-5 rotate-180" />
+              </Button>
+              
+              <div className="flex items-center gap-2">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    size="icon"
+                    onClick={() => setCurrentPage(page)}
+                    className="w-10 h-10"
+                  >
+                    {page}
+                  </Button>
+                ))}
+              </div>
+
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+              >
+                <ArrowRight className="w-5 h-5" />
+              </Button>
+            </div>
+          )}
 
           <div className="text-center mt-12">
             <Button variant="outline" size="lg" asChild>

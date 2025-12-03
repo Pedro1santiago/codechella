@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
 
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -16,10 +17,18 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import RequestAdmin from "@/pages/RequestAdmin";
 import SuperAdminDashboard from "@/pages/SuperAdminDashboard";
 import UserRequestStatus from "@/pages/UserRequestStatus";
+import { startKeepAlive } from "@/api/codechellaApi";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => {
+  // Ativa o keep-alive para manter o servidor Render acordado
+  useEffect(() => {
+    const stopKeepAlive = startKeepAlive();
+    return () => stopKeepAlive();
+  }, []);
+
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -91,6 +100,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
