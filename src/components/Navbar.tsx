@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Music, Search, User, LogOut } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { hasPendingSolicitation } from "@/lib/solicitationStorage";
 
 export const Navbar = () => {
   const { user, logout } = useAuth();
@@ -15,10 +16,23 @@ export const Navbar = () => {
   function handleCreateEvent() {
     if (!user) {
       navigate("/login");
-    } else if (user.tipoUsuario === "ADMIN" || user.tipoUsuario === "SUPER") {
+      return;
+    }
+    
+    const tipo = user.tipoUsuario?.toUpperCase();
+    if (tipo === "ADMIN" || tipo === "SUPER") {
       navigate("/criar-evento");
     } else {
-      navigate("/solicitar-admin");
+      // Verificar se já tem solicitação pendente
+      const hasPending = hasPendingSolicitation(user.id);
+      
+      if (hasPending) {
+        alert("Você já possui uma solicitação de admin pendente. Acesse 'Meu Status' para acompanhar.");
+        navigate("/user/request-status");
+      } else {
+        alert("Você precisa ser ADMIN para criar eventos. Faça uma solicitação.");
+        navigate("/solicitar-admin");
+      }
     }
   }
 
@@ -75,7 +89,16 @@ export const Navbar = () => {
                   >
                     Dashboard
                   </Button>
-                ) : null}
+                ) : (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="hidden md:flex"
+                    onClick={() => navigate("/user/request-status")}
+                  >
+                    Meu Status
+                  </Button>
+                )}
 
                 <Button variant="outline" size="sm" className="hidden md:flex" onClick={handleLogout}>
                   <LogOut className="w-4 h-4 mr-2" />

@@ -1,16 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { cadastrarEvento } from "@/api/codechellaApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Navbar } from "@/components/Navbar";
-import { useNavigate } from "react-router-dom";
-import { saveCustomImage } from "@/lib/imageStorage";
+import { useNavigate, useParams } from "react-router-dom";
+import { saveCustomImage, getCustomImage } from "@/lib/imageStorage";
 
-export default function CreateEvent() {
+export default function EditEvent() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
 
   const [form, setForm] = useState({
     categoria: "SHOW",
@@ -23,8 +23,57 @@ export default function CreateEvent() {
     ingressosDisponiveis: ""
   });
   const [loading, setLoading] = useState(false);
+  const [loadingEvento, setLoadingEvento] = useState(true);
   const [msg, setMsg] = useState<string | null>(null);
   const [msgType, setMsgType] = useState<"success" | "error" | null>(null);
+
+  useEffect(() => {
+    // Carregar dados do evento
+    async function loadEvento() {
+      try {
+        const response = await fetch(`https://codechella-backend.onrender.com/eventos/${id}`, {
+          headers: {
+            "Authorization": `Bearer ${user?.token}`,
+            "Content-Type": "application/json"
+          }
+        });
+
+        if (!response.ok) throw new Error("Erro ao carregar evento");
+
+        const evento = await response.json();
+        
+        // Preencher formulário com dados do evento
+        setForm({
+          categoria: evento.tipo || evento.categoria || "SHOW",
+          nome: evento.nome || "",
+          data: evento.data ? formatDateForInput(evento.data) : "",
+          local: evento.local || "",
+          preco: evento.preco ? evento.preco.toString() : "",
+          descricao: evento.descricao || "",
+          imagem: getCustomImage(evento.id) || "",
+          ingressosDisponiveis: evento.ingressosDisponiveis ? evento.ingressosDisponiveis.toString() : ""
+        });
+      } catch (err: any) {
+        setMsgType("error");
+        setMsg(err.message || "Erro ao carregar evento");
+      } finally {
+        setLoadingEvento(false);
+      }
+    }
+
+    if (id && user?.token) {
+      loadEvento();
+    }
+  }, [id, user?.token]);
+
+  function formatDateForInput(dateString: string): string {
+    try {
+      const date = new Date(dateString);
+      return date.toISOString().slice(0, 16);
+    } catch {
+      return "";
+    }
+  }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -41,30 +90,52 @@ export default function CreateEvent() {
         data: form.data,
         local: form.local,
         preco: parseFloat(form.preco),
-        tipo: form.categoria, // Backend espera "tipo" ao invés de "categoria"
+        tipo: form.categoria,
         descricao: form.descricao,
-        // imagem não é enviada ao backend, apenas mantida no frontend
         ingressosDisponiveis: parseInt(form.ingressosDisponiveis)
       };
 
-      // Enviar token JWT no header Authorization
-      const eventoCreated = await cadastrarEvento(eventoPayload, user?.token);
-      
+      const response = await fetch(`https://codechella-backend.onrender.com/eventos/${id}`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${user?.token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(eventoPayload)
+      });
+
+      if (!response.ok) throw new Error("Erro ao atualizar evento");
+
+      const eventoUpdated = await response.json();
+
       // Se o usuário forneceu uma URL de imagem customizada, salvar no localStorage
-      if (form.imagem && eventoCreated?.id) {
-        saveCustomImage(eventoCreated.id, form.imagem);
+      if (form.imagem) {
+        saveCustomImage(parseInt(id!), form.imagem);
       }
-      
+
       setMsgType("success");
-      setMsg("✓ Evento criado com sucesso! Redirecionando...");
-      setForm({ categoria: "SHOW", nome: "", data: "", local: "", preco: "", descricao: "", imagem: "", ingressosDisponiveis: "" });
+      setMsg("✓ Evento atualizado com sucesso! Redirecionando...");
       setTimeout(() => navigate("/admin-dashboard"), 1500);
     } catch (err: any) {
       setMsgType("error");
-      setMsg(err.message || "Erro ao criar evento");
+      setMsg(err.message || "Erro ao atualizar evento");
     } finally {
       setLoading(false);
     }
+  }
+
+  if (loadingEvento) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="flex items-center justify-center min-h-[80vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Carregando evento...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -76,10 +147,10 @@ export default function CreateEvent() {
           <div className="max-w-2xl mx-auto">
             <div className="text-center mb-12 space-y-2">
               <h1 className="font-display text-4xl md:text-5xl font-bold">
-                Criar <span className="text-gradient">Evento</span>
+                Editar <span className="text-gradient">Evento</span>
               </h1>
               <p className="text-lg text-muted-foreground">
-                Preencha os dados abaixo para cadastrar um novo evento
+                Atualize os dados do evento
               </p>
             </div>
 
@@ -191,7 +262,7 @@ export default function CreateEvent() {
 
                 <div className="pt-2 pb-4 px-4 rounded-lg bg-secondary/20 border border-border/50">
                   <p className="text-sm text-muted-foreground">
-                    <strong>Criado por:</strong> {user?.nome || user?.email}
+                    <strong>Editado por:</strong> {user?.nome || user?.email}
                   </p>
                 </div>
 
@@ -211,11 +282,12 @@ export default function CreateEvent() {
                     disabled={loading}
                     className="flex-1"
                   >
-                    {loading ? "Criando..." : "Criar Evento"}
+                    {loading ? "Salvando..." : "Salvar Alterações"}
                   </Button>
                   <Button 
+                    type="button"
                     variant="outline" 
-                    onClick={() => navigate("/")}
+                    onClick={() => navigate("/admin-dashboard")}
                     className="flex-1"
                   >
                     Cancelar

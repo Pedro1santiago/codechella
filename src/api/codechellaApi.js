@@ -194,6 +194,31 @@ export async function minhasSolicitacoes(usuarioId, token) {
   return res.json();
 }
 
+export async function verificarStatusSolicitacao(usuarioId, token) {
+  try {
+    const res = await fetch(`${BASE_URL}/permissoes/minhas-solicitacoes`, {
+      headers: buildHeaders(token, { "usuario-id": usuarioId.toString() })
+    });
+    
+    if (!res.ok) {
+      // Se for 401/400 ou qualquer erro, retornar null silenciosamente
+      return null;
+    }
+    
+    const solicitacoes = await res.json();
+    
+    if (Array.isArray(solicitacoes) && solicitacoes.length > 0) {
+      const ultima = solicitacoes[solicitacoes.length - 1];
+      return { status: ultima.status };
+    }
+    
+    return null;
+  } catch (e) {
+    console.error("Erro ao verificar status:", e);
+    return null;
+  }
+}
+
 export function listarSolicitacoesPendentesComToken(token, callback) {
   if (!token) throw new Error("Token JWT é necessário");
 

@@ -9,6 +9,9 @@ import { getAllEvents } from "@/api/codechellaApi";
 import { useAuth } from "@/context/AuthContext";
 import { formatarPreco } from "@/lib/utils";
 import eventFallback from "@/assets/event-electronic.jpg";
+import { getCustomImage } from "@/lib/imageStorage";
+import AdminPromotionModal from "@/components/AdminPromotionModal";
+import { useAdminPromotionCheck } from "@/hooks/useAdminPromotionCheck";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,17 +25,26 @@ import {
 
 // Mapeamento de imagens por categoria
 const categoriasImagens: Record<string, string> = {
-  SHOW: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&q=80",
-  CONCERTO: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=800&q=80",
+  SHOW: "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80",
+  CONCERTO: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=800&q=80",
   TEATRO: "https://images.unsplash.com/photo-1503095396549-807759245b35?w=800&q=80",
-  PALESTRA: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80",
-  WORKSHOP: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80"
+  PALESTRA: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&q=80",
+  WORKSHOP: "https://images.unsplash.com/photo-1528605105345-5344ea20e269?w=800&q=80"
 };
 
 function getImagemEvento(event: any): string {
+  // 1. Verificar se tem imagem customizada no localStorage
+  const customImage = getCustomImage(event.id);
+  if (customImage) {
+    return customImage;
+  }
+  
+  // 2. Verificar se tem imagem do backend
   if (event.imagemUrl || event.imagem) {
     return event.imagemUrl || event.imagem;
   }
+  
+  // 3. Usar imagem padrão da categoria
   const categoria = (event.categoria || event.tipo || "").toUpperCase();
   return categoriasImagens[categoria] || eventFallback;
 }
@@ -58,6 +70,7 @@ const AllEvents = () => {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<any | null>(null);
   const [showLoginAlert, setShowLoginAlert] = useState(false);
+  const showPromotionModal = useAdminPromotionCheck();
 
   useEffect(() => {
     let cancelled = false;
@@ -66,8 +79,9 @@ const AllEvents = () => {
         console.info("[AllEvents] Carregando eventos", { hasToken: Boolean(user?.token) });
         const data = await getAllEvents(user?.token);
         if (!cancelled) {
-          setEventos(data || []);
-          console.info("[AllEvents] Eventos carregados", { count: Array.isArray(data) ? data.length : 0 });
+          const eventosAtivos = Array.isArray(data) ? data.filter(e => e.statusEvento !== "CANCELADO" && e.status !== "CANCELADO") : [];
+          setEventos(eventosAtivos);
+          console.info("[AllEvents] Eventos carregados", { total: Array.isArray(data) ? data.length : 0, ativos: eventosAtivos.length });
         }
       } catch (e) {
         console.error("[AllEvents] Erro ao carregar eventos:", e);
@@ -215,6 +229,8 @@ const AllEvents = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AdminPromotionModal open={showPromotionModal} />
     </div>
   );
 };

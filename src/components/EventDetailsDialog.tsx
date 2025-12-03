@@ -40,12 +40,15 @@ export default function EventDetailsDialog({ open, onOpenChange, evento, onDelet
       setLoading(true);
       await cancelarEvento(evento.id, user.token);
       if (onDeleted) onDeleted(evento.id);
+      setConfirm(false);
       onOpenChange(false);
-    } catch (e) {
-      console.error("Erro ao cancelar/excluir evento:", e);
+      alert("✓ Evento cancelado com sucesso!");
+    } catch (e: any) {
+      console.error("Erro ao cancelar evento:", e);
+      alert("❌ Erro ao cancelar evento: " + (e.message || "Erro desconhecido"));
+      setConfirm(false);
     } finally {
       setLoading(false);
-      setConfirm(false);
     }
   }
 

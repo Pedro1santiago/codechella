@@ -5,19 +5,27 @@ import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
 import { useNavigate } from "react-router-dom";
 import { Trash2, Edit } from "lucide-react";
+import { getCustomImage } from "@/lib/imageStorage";
 
 // Mapeamento de imagens por categoria
 const categoriasImagens: Record<string, string> = {
-  SHOW: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&q=80",
-  CONCERTO: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=800&q=80",
+  SHOW: "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80",
+  CONCERTO: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=800&q=80",
   TEATRO: "https://images.unsplash.com/photo-1503095396549-807759245b35?w=800&q=80",
-  PALESTRA: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80",
-  WORKSHOP: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80"
+  PALESTRA: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&q=80",
+  WORKSHOP: "https://images.unsplash.com/photo-1528605105345-5344ea20e269?w=800&q=80"
 };
 
 function getImagemEvento(evento: Evento): string {
+  // 1. Verificar se tem imagem customizada no localStorage
+  const customImage = getCustomImage(evento.id);
+  if (customImage) return customImage;
+  
+  // 2. Verificar se tem imagem do backend
   if (evento.imagem) return evento.imagem;
-  const categoria = (evento.categoria || "").toUpperCase();
+  
+  // 3. Usar imagem padrão da categoria
+  const categoria = (evento.categoria || evento.tipo || "").toUpperCase();
   return categoriasImagens[categoria] || "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800&q=80";
 }
 
@@ -26,11 +34,13 @@ interface Evento {
   nome: string;
   data: string;
   local: string;
-  preco: number;
+  preco?: number;
   categoria: string;
+  tipo?: string;
   imagem?: string;
   ingressosDisponiveis?: number;
   criadoPorId?: number;
+  idAdminCriador?: number;
 }
 
 export default function AdminDashboard() {
@@ -38,9 +48,25 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [meusEventos, setMeusEventos] = useState<Evento[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // SSE para listar todos os eventos
+    // Carregar eventos inicialmente via API REST
+    async function loadInitialEvents() {
+      try {
+        const { getAllEvents } = await import("@/api/codechellaApi");
+        const data = await getAllEvents(user?.token);
+        setEventos(data);
+      } catch (error) {
+        console.error("Erro ao carregar eventos:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadInitialEvents();
+
+    // SSE para listar todos os eventos em tempo real
     const unsubscribe = listarEventosSSE((data: Evento) => {
       setEventos((prev) => {
         const exists = prev.find((e) => e.id === data.id);
@@ -52,11 +78,14 @@ export default function AdminDashboard() {
     });
 
     return () => unsubscribe.close();
-  }, []);
+  }, [user?.token]);
 
   useEffect(() => {
     // Filtrar apenas eventos criados por este admin
-    const filtered = eventos.filter((e) => e.criadoPorId === user?.id);
+    const filtered = eventos.filter((e) => {
+      const criadorId = e.criadoPorId || e.idAdminCriador;
+      return criadorId === user?.id;
+    });
     setMeusEventos(filtered);
   }, [eventos, user?.id]);
 
@@ -94,7 +123,12 @@ export default function AdminDashboard() {
             </Button>
           </div>
 
-          {meusEventos.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-16">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Carregando eventos...</p>
+            </div>
+          ) : meusEventos.length === 0 ? (
             <div className="text-center py-16">
               <p className="text-xl text-muted-foreground mb-6">
                 Você ainda não criou nenhum evento
@@ -122,11 +156,11 @@ export default function AdminDashboard() {
                     <div className="md:col-span-2">
                       <h3 className="text-xl font-bold text-foreground mb-2">{evento.nome}</h3>
                       <div className="space-y-1 text-sm text-muted-foreground">
-                        <p><strong>Categoria:</strong> {evento.categoria}</p>
+                        <p><strong>Categoria:</strong> {evento.categoria || evento.tipo}</p>
                         <p><strong>Data:</strong> {new Date(evento.data).toLocaleString('pt-BR')}</p>
                         <p><strong>Local:</strong> {evento.local}</p>
-                        <p><strong>Preço:</strong> R$ {evento.preco.toFixed(2)}</p>
-                        <p><strong>Ingressos:</strong> {evento.ingressosDisponiveis} disponíveis</p>
+                        <p><strong>Preço:</strong> R$ {evento.preco ? evento.preco.toFixed(2) : '0.00'}</p>
+                        <p><strong>Ingressos:</strong> {evento.ingressosDisponiveis || 0} disponíveis</p>
                       </div>
                     </div>
 

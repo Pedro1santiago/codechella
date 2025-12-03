@@ -11,9 +11,11 @@ import NotFound from "./pages/NotFound";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import CreateEvent from "@/pages/CreateEvent";
+import EditEvent from "@/pages/EditEvent";
 import AdminDashboard from "@/pages/AdminDashboard";
 import RequestAdmin from "@/pages/RequestAdmin";
 import SuperAdminDashboard from "@/pages/SuperAdminDashboard";
+import UserRequestStatus from "@/pages/UserRequestStatus";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +41,15 @@ const App = () => (
           />
 
           <Route
+            path="/user/request-status"
+            element={
+              <ProtectedRoute requireRole="USER">
+                <UserRequestStatus />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             path="/admin-dashboard"
             element={
               <ProtectedRoute requireRole="ADMIN">
@@ -52,6 +63,15 @@ const App = () => (
             element={
               <ProtectedRoute requireRole="ADMIN">
                 <CreateEvent />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/editar-evento/:id"
+            element={
+              <ProtectedRoute requireRole="ADMIN">
+                <EditEvent />
               </ProtectedRoute>
             }
           />

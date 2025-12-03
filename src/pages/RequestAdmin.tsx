@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Navbar } from "@/components/Navbar";
 import { solicitarPermissaoAdmin } from "@/api/codechellaApi";
 import { useNavigate } from "react-router-dom";
+import { saveSolicitation } from "@/lib/solicitationStorage";
 
 export default function RequestAdmin() {
   const { user } = useAuth();
@@ -22,9 +23,13 @@ export default function RequestAdmin() {
     setLoading(true);
     try {
       await solicitarPermissaoAdmin(user?.id ?? 0, user?.token ?? "", motivo);
+      
+      // Salvar solicitação no localStorage
+      saveSolicitation(user?.id ?? 0, user?.nome || user?.email || "");
+      
       setMsgType("success");
-      setMsg("✓ Solicitação enviada com sucesso! Aguarde aprovação.");
-      setTimeout(() => navigate("/"), 1500);
+      setMsg("✓ Solicitação enviada com sucesso! Redirecionando...");
+      setTimeout(() => navigate("/user/request-status"), 1500);
     } catch (err: any) {
       setMsgType("error");
       setMsg(err.message || "Erro ao enviar solicitação");
