@@ -30,8 +30,9 @@ export default function UserRequestStatus() {
       }
 
       // Se já está aprovada ou negada localmente, não precisa verificar mais
-      if (solicitation.status === "APROVADA" || solicitation.status === "NEGADA") {
-        setStatus(solicitation.status);
+      const statusNormalized = solicitation.status?.toUpperCase();
+      if (statusNormalized === "APROVADA" || statusNormalized === "APROVADO" || statusNormalized === "NEGADA" || statusNormalized === "NEGADO") {
+        setStatus(statusNormalized === "APROVADO" ? "APROVADA" : statusNormalized === "NEGADO" ? "NEGADA" : solicitation.status);
         setUserName(solicitation.userName);
         setLoading(false);
         return;
@@ -75,7 +76,7 @@ export default function UserRequestStatus() {
   };
 
   const getStatusConfig = () => {
-    switch (status) {
+    switch (status?.toUpperCase()) {
       case "PENDENTE":
         return {
           icon: Clock,
@@ -87,16 +88,18 @@ export default function UserRequestStatus() {
           showAction: false
         };
       case "APROVADA":
+      case "APROVADO":
         return {
           icon: CheckCircle2,
           color: "text-green-500",
           bgColor: "bg-green-500/10",
           borderColor: "border-green-500/30",
           title: "Solicitação Aprovada! 🎉",
-          message: "Parabéns! Você foi aceito como administrador. Faça logout e login novamente para ativar suas permissões.",
+          message: "Efetue o login novamente para ter acesso às funcionalidades de um administrador.",
           showAction: true
         };
       case "NEGADA":
+      case "NEGADO":
         return {
           icon: XCircle,
           color: "text-red-500",
