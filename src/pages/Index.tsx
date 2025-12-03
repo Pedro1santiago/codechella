@@ -113,7 +113,7 @@ const Index = () => {
       <Navbar />
 
       {/* ========================= HERO SECTION =========================== */}
-      <section className="relative pt-20 min-h-[90vh] flex items-center overflow-hidden">
+      <section className="relative pt-20 md:pt-20 min-h-[90vh] flex items-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img 
             src={heroImage}
@@ -124,7 +124,7 @@ const Index = () => {
         </div>
 
         <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-2xl space-y-8 animate-fade-in">
+          <div className="max-w-2xl space-y-8 animate-fade-in pt-8 md:pt-0">
             <div className="inline-block">
               <span className="bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-semibold border border-primary/20">
                 🎵 Plataforma de Eventos
