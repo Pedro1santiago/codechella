@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Navbar } from "@/components/Navbar";
-import { listarSolicitacoesPendentesComToken, aprovarSolicitacao, negarSolicitacao, listarAdmins, listarUsuarios, removerAdmin, removerUsuario, excluirEventoQualquer } from "@/api/codechellaApi";
+import { listarSolicitacoesPendentesComToken, aprovarSolicitacao, negarSolicitacao, listarAdmins, listarUsuarios, removerAdmin, removerUsuario, excluirEventoQualquer, listarUsuariosExcluidos, listarEventosCancelados, reativarEvento } from "@/api/codechellaApi";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +13,16 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface SolicitacaoPermissao {
   id: number;
@@ -34,14 +45,37 @@ interface Usuario {
   email: string;
 }
 
+interface UsuarioExcluido {
+  id: number;
+  nome: string;
+  email: string;
+  dataExclusao?: string;
+}
+
+interface EventoCancelado {
+  id: number;
+  nome: string;
+  descricao: string;
+  dataEvento: string;
+  categoria: string;
+  localEvento: string;
+}
+
 export default function SuperAdminDashboard() {
   const { user } = useAuth();
   const [solicitacoes, setSolicitacoes] = useState<SolicitacaoPermissao[]>([]);
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [usuariosExcluidos, setUsuariosExcluidos] = useState<UsuarioExcluido[]>([]);
+  const [eventosCancelados, setEventosCancelados] = useState<EventoCancelado[]>([]);
+  const [usuarioSelecionado, setUsuarioSelecionado] = useState<UsuarioExcluido | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingSolicitacoes, setLoadingSolicitacoes] = useState(false);
-  const [tab, setTab] = useState<"solicitacoes" | "admins" | "usuarios">("solicitacoes");
+  const [tab, setTab] = useState<"solicitacoes" | "admins" | "usuarios" | "excluidos">("solicitacoes");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<{ id: number; type: "admin" | "usuario"; nome: string } | null>(null);
+  const [reactivateDialogOpen, setReactivateDialogOpen] = useState(false);
+  const [eventoToReactivate, setEventoToReactivate] = useState<EventoCancelado | null>(null);
 
   async function carregarSolicitacoes() {
     if (!user?.token) return;
@@ -76,6 +110,9 @@ export default function SuperAdminDashboard() {
       } else if (tab === "usuarios") {
         const data = await listarUsuarios(user.token);
         setUsuarios(data);
+      } else if (tab === "excluidos") {
+        const data = await listarUsuariosExcluidos(user.token);
+        setUsuariosExcluidos(data);
       }
     } catch (err) {
       // Error handled silently
@@ -99,6 +136,10 @@ export default function SuperAdminDashboard() {
     listarUsuarios(user.token)
       .then(data => setUsuarios(data))
       .catch(err => {});
+
+    listarUsuariosExcluidos(user.token)
+      .then(data => setUsuariosExcluidos(data))
+      .catch(err => {});
   }, [user?.id, user?.token]);
 
   async function handleAprovar(id: number) {
@@ -119,23 +160,67 @@ export default function SuperAdminDashboard() {
     }
   }
 
-  async function handleRemoverAdmin(id: number) {
-    if (!confirm("Remover esse admin?")) return;
+  function openDeleteDialog(id: number, type: "admin" | "usuario", nome: string) {
+    setItemToDelete({ id, type, nome });
+    setDeleteDialogOpen(true);
+  }
+
+  async function confirmDelete() {
+    if (!itemToDelete) return;
+    
+    setDeleteDialogOpen(false);
+    
     try {
-      await removerAdmin(id, user?.id ?? 0);
-      setAdmins((prev) => prev.filter((a) => a.id !== id));
+      if (itemToDelete.type === "admin") {
+        await removerAdmin(itemToDelete.id, user?.token ?? "");
+        setAdmins((prev) => prev.filter((a) => a.id !== itemToDelete.id));
+      } else {
+        await removerUsuario(itemToDelete.id, user?.token ?? "");
+        setUsuarios((prev) => prev.filter((u) => u.id !== itemToDelete.id));
+        // Atualizar lista de excluídos
+        const excluidos = await listarUsuariosExcluidos(user?.token ?? "");
+        setUsuariosExcluidos(excluidos);
+      }
+      setItemToDelete(null);
     } catch (err: any) {
-      // Error handled silently
+      setItemToDelete(null);
+      alert(`Não foi possível remover ${itemToDelete.type === "admin" ? "o admin" : "o usuário"}.`);
     }
   }
 
-  async function handleRemoverUsuario(id: number) {
-    if (!confirm("Remover esse usuário?")) return;
+  async function verEventosCancelados(usuario: UsuarioExcluido) {
     try {
-      await removerUsuario(id, user?.id ?? 0);
-      setUsuarios((prev) => prev.filter((u) => u.id !== id));
-    } catch (err: any) {
-      // Error handled silently
+      const eventos = await listarEventosCancelados(usuario.id, user?.token ?? "");
+      setEventosCancelados(eventos);
+      setUsuarioSelecionado(usuario);
+    } catch (err) {
+      alert("Erro ao carregar eventos cancelados");
+    }
+  }
+
+  function voltarParaExcluidos() {
+    setEventosCancelados([]);
+    setUsuarioSelecionado(null);
+  }
+
+  function abrirReativarEvento(evento: EventoCancelado) {
+    setEventoToReactivate(evento);
+    setReactivateDialogOpen(true);
+  }
+
+  async function confirmarReativarEvento() {
+    if (!eventoToReactivate) return;
+    
+    setReactivateDialogOpen(false);
+    
+    try {
+      await reativarEvento(eventoToReactivate.id, user?.token ?? "");
+      setEventosCancelados((prev) => prev.filter((e) => e.id !== eventoToReactivate.id));
+      setEventoToReactivate(null);
+      alert("Evento reativado com sucesso! Agora você é o criador deste evento.");
+    } catch (err) {
+      setEventoToReactivate(null);
+      alert("Erro ao reativar evento");
     }
   }
 
@@ -184,6 +269,16 @@ export default function SuperAdminDashboard() {
                   }`}
                 >
                   Usuários ({usuarios.length})
+                </button>
+                <button
+                  onClick={() => setTab("excluidos")}
+                  className={`px-6 py-3 font-semibold transition-colors ${
+                    tab === "excluidos"
+                      ? "text-primary border-b-2 border-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Usuários Excluídos ({usuariosExcluidos.length})
                 </button>
               </div>
               <Button 
@@ -271,7 +366,7 @@ export default function SuperAdminDashboard() {
                         <div className="text-sm text-muted-foreground">{admin.email}</div>
                       </div>
                       <Button
-                        onClick={() => handleRemoverAdmin(admin.id)}
+                        onClick={() => openDeleteDialog(admin.id, "admin", admin.nome)}
                         variant="destructive"
                       >
                         Remover
@@ -295,7 +390,7 @@ export default function SuperAdminDashboard() {
                         <div className="text-sm text-muted-foreground">{usuario.email}</div>
                       </div>
                       <Button
-                        onClick={() => handleRemoverUsuario(usuario.id)}
+                        onClick={() => openDeleteDialog(usuario.id, "usuario", usuario.nome)}
                         variant="destructive"
                       >
                         Remover
@@ -305,9 +400,131 @@ export default function SuperAdminDashboard() {
                 )}
               </section>
             )}
+
+            {/* Usuários Excluídos */}
+            {tab === "excluidos" && !usuarioSelecionado && (
+              <section className="space-y-4">
+                {usuariosExcluidos.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">Nenhum usuário excluído</p>
+                ) : (
+                  usuariosExcluidos.map((usuario) => (
+                    <div 
+                      key={usuario.id} 
+                      className="bg-card p-6 rounded-lg border border-border/50 flex justify-between items-center cursor-pointer hover:bg-accent/50 transition-colors"
+                      onClick={() => verEventosCancelados(usuario)}
+                    >
+                      <div>
+                        <div className="font-bold text-lg flex items-center gap-2">
+                          {usuario.nome}
+                          <Badge variant="destructive">Excluído</Badge>
+                        </div>
+                        <div className="text-sm text-muted-foreground">{usuario.email}</div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          verEventosCancelados(usuario);
+                        }}
+                      >
+                        Ver Eventos Cancelados
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </section>
+            )}
+
+            {/* Eventos Cancelados do Usuário Selecionado */}
+            {tab === "excluidos" && usuarioSelecionado && (
+              <section className="space-y-4">
+                <div className="flex items-center gap-4 mb-6">
+                  <Button onClick={voltarParaExcluidos} variant="outline">
+                    ← Voltar
+                  </Button>
+                  <div>
+                    <h2 className="text-2xl font-bold">Eventos Cancelados</h2>
+                    <p className="text-muted-foreground">
+                      Usuário: {usuarioSelecionado.nome}
+                    </p>
+                  </div>
+                </div>
+
+                {eventosCancelados.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">Nenhum evento cancelado</p>
+                ) : (
+                  eventosCancelados.map((evento) => (
+                    <div 
+                      key={evento.id} 
+                      className="bg-card p-6 rounded-lg border border-border/50 cursor-pointer hover:bg-accent/50 transition-colors"
+                      onClick={() => abrirReativarEvento(evento)}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="font-bold text-lg flex items-center gap-2 mb-2">
+                            {evento.nome}
+                            <Badge variant="secondary">{evento.categoria}</Badge>
+                            <Badge variant="outline">Cancelado</Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-2">{evento.descricao}</p>
+                          <div className="flex gap-4 text-sm">
+                            <span>📍 {evento.localEvento}</span>
+                            <span>📅 {new Date(evento.dataEvento).toLocaleDateString("pt-BR")}</span>
+                          </div>
+                        </div>
+                        <Button
+                          variant="default"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            abrirReativarEvento(evento);
+                          }}
+                        >
+                          Reativar Evento
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </section>
+            )}
           </div>
         </div>
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Remoção</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover {itemToDelete?.type === "admin" ? "o admin" : "o usuário"} <strong>{itemToDelete?.nome}</strong>? Os eventos criados por este usuário serão cancelados e apenas você (Super Admin) poderá visualizá-los e reativá-los.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={reactivateDialogOpen} onOpenChange={setReactivateDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reativar Evento</AlertDialogTitle>
+            <AlertDialogDescription>
+              Gostaria de reativar o evento <strong>{eventoToReactivate?.nome}</strong>? 
+              Ao confirmar, o evento voltará a ser exibido para todos os usuários e você se tornará o criador do evento.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmarReativarEvento} className="bg-green-600 hover:bg-green-700">
+              Sim, Reativar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

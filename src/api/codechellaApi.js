@@ -465,3 +465,21 @@ export async function rebaixarParaUser(id, token) {
   if (!res.ok) throw new Error("Erro ao rebaixar para user");
   return res.json();
 }
+
+export async function listarUsuariosExcluidos(token) {
+  const res = await fetch(`${BASE_URL}/super-admin/usuarios-excluidos`, { headers: buildHeaders(token) });
+  if (!res.ok) throw new Error("Erro ao listar usuários excluídos");
+  return res.json();
+}
+
+export async function listarEventosCancelados(idUsuario, token) {
+  const res = await fetch(`${BASE_URL}/super-admin/eventos-cancelados/${idUsuario}`, { headers: buildHeaders(token) });
+  if (!res.ok) throw new Error("Erro ao listar eventos cancelados");
+  return res.json();
+}
+
+export async function reativarEvento(idEvento, token) {
+  const res = await fetch(`${BASE_URL}/super-admin/reativar-evento/${idEvento}`, { method: "PUT", headers: buildHeaders(token) });
+  if (!res.ok) throw new Error("Erro ao reativar evento");
+  return res.json();
+}
