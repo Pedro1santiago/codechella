@@ -23,6 +23,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ChevronDown } from "lucide-react";
 
 interface SolicitacaoPermissao {
   id: number;
@@ -237,8 +244,8 @@ export default function SuperAdminDashboard() {
           </div>
 
           <div className="max-w-6xl mx-auto">
-            {/* Abas */}
-            <div className="flex justify-between items-center mb-8 border-b border-border">
+            {/* Abas - Desktop */}
+            <div className="hidden md:flex justify-between items-center mb-8 border-b border-border">
               <div className="flex gap-2">
                 <button
                   onClick={() => setTab("solicitacoes")}
@@ -288,6 +295,44 @@ export default function SuperAdminDashboard() {
                 size="sm"
               >
                 {loadingSolicitacoes ? "Carregando..." : "Atualizar"}
+              </Button>
+            </div>
+
+            {/* Abas - Mobile */}
+            <div className="flex md:hidden justify-between items-center mb-8 gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="flex-1">
+                    {tab === "solicitacoes" && `Solicitações (${solicitacoes.length})`}
+                    {tab === "admins" && `Admins (${admins.length})`}
+                    {tab === "usuarios" && `Usuários (${usuarios.length})`}
+                    {tab === "excluidos" && `Excluídos (${usuariosExcluidos.length})`}
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  <DropdownMenuItem onClick={() => setTab("solicitacoes")}>
+                    Solicitações ({solicitacoes.length})
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTab("admins")}>
+                    Admins ({admins.length})
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTab("usuarios")}>
+                    Usuários ({usuarios.length})
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTab("excluidos")}>
+                    Usuários Excluídos ({usuariosExcluidos.length})
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              <Button 
+                onClick={atualizar} 
+                disabled={loadingSolicitacoes}
+                variant="outline"
+                size="sm"
+              >
+                {loadingSolicitacoes ? "..." : "Atualizar"}
               </Button>
             </div>
 

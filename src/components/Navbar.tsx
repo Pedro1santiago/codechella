@@ -158,18 +158,19 @@ export const Navbar = () => {
               </>
             ) : (
               <>
-                <Button variant="outline" size="sm" className="hidden md:flex" asChild>
-                  <a href="/login">
-                    <User className="w-4 h-4 mr-2" />
-                    Entrar
-                  </a>
+                <Button variant="outline" size="sm" className="hidden md:flex" onClick={() => navigate("/login")}>
+                  <User className="w-4 h-4 mr-2" />
+                  Login
                 </Button>
 
-                <Button variant="outline" size="sm" asChild>
-                  <a href="/login">
-                    <User className="w-4 h-4 mr-2" />
-                    Entrar
-                  </a>
+                <Button variant="outline" size="sm" className="hidden md:flex" onClick={() => navigate("/login")}>
+                  <User className="w-4 h-4 mr-2" />
+                  Dashboard
+                </Button>
+
+                <Button variant="outline" size="sm" className="md:hidden" onClick={() => navigate("/login")}>
+                  <User className="w-4 h-4 mr-2" />
+                  Dashboard
                 </Button>
 
                 <Button variant="hero" size="sm" className="hidden md:flex" onClick={handleCreateEvent}>

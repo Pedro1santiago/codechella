@@ -46,7 +46,7 @@ export const EventCard = ({ title, date, location, price, image, category, id, o
       </div>
       
       <div className="p-6 space-y-4">
-        <h3 className="font-display text-xl font-bold text-foreground group-hover:text-primary transition-colors">
+        <h3 className="font-display text-xl font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2 min-h-[3.5rem]">
           {title}
         </h3>
         

@@ -9,7 +9,18 @@ export function buildHeaders(token, extraHeaders = {}) {
 }
 
 export function startKeepAlive() {
-  return () => {};
+  // Fazer ping a cada 50 segundos (menos de 1 minuto)
+  const intervalId = setInterval(async () => {
+    try {
+      // Usa GET que já está permitido pelo CORS
+      await fetch(`${BASE_URL}/eventos?keepalive=true`);
+    } catch (err) {
+      // Ignora erros silenciosamente
+    }
+  }, 50000); // 50 segundos
+
+  // Retorna função para cancelar o intervalo se necessário
+  return () => clearInterval(intervalId);
 }
 
 function connectSSE(url, onMessage) {
